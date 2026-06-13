@@ -1,5 +1,7 @@
 import yt_dlp
 from pydub import AudioSegment
+from yt_dlp.utils import DownloadError
+import streamlit as st
 import os
 
 DOWNLOAD_DIR = 'downloads'
@@ -54,7 +56,14 @@ def chunk_audio(wav_path:str, chunk_minutes:int=10)-> list:
 def process_input(source: str) -> list:
     if source.startswith("http://") or source.startswith("https://"):
         print("Detected YouTube URL. Downloading audio...")
-        wav_path = download_youtube_audio(source)
+        # wav_path = download_youtube_audio(source)
+        try:
+            wav_path = download_youtube_audio(source)
+        except DownloadError:
+            st.error(
+                "YouTube download failed. Please upload the video/audio file directly."
+            )
+            st.stop()
     else:
         print("Detected local file. Converting to WAV...")
         wav_path = convert_to_wav(source)
