@@ -1,0 +1,53 @@
+# Virtual Environment
+.venv/
+venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment Variables
+.env
+
+# Streamlit
+.streamlit/
+
+# Audio / Video Files
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.webm
+
+# Temporary Files
+temp/
+downloads/
+chunks/
+
+# Vector Database
+chroma_db/
+vectorstore/
+vector_db/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build Files
+dist/
+build/
+
+# Misc
+*.sqlite3
