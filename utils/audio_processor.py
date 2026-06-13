@@ -18,6 +18,8 @@ def download_youtube_audio(url :str) ->str:
             }
         ],
         "quiet": True,
+        "nocheckcertificate": True,
+        "geo_bypass": True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
