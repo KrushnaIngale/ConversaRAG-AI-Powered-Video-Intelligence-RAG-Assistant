@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from dotenv import load_dotenv
 from main import run_pipeline
 from core.rag_engine import ask_question
@@ -65,7 +66,6 @@ st.markdown(
         color: white;
         margin-bottom: 15px;
     }
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -99,10 +99,37 @@ st.divider()
 with st.sidebar:
     st.header("⚙️ Input Settings")
 
-    source = st.text_input(
-        "YouTube URL or Local File Path",
-        placeholder="https://youtube.com/...",
+    # Let user choose how they want to supply the video
+    input_method = st.radio(
+        "Choose Input Method",
+        ["Upload Video File", "Enter URL / System Path"]
     )
+
+    source = None
+
+    if input_method == "Upload Video File":
+        uploaded_file = st.file_uploader(
+            "Upload a video", 
+            type=["mp4", "mkv", "avi", "mov", "webm"]
+        )
+        if uploaded_file is not None:
+            # Create a temporary directory to save the uploaded stream file
+            temp_dir = "temp_uploaded_videos"
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Use the upload stream's exact file name
+            source = os.path.join(temp_dir, uploaded_file.name)
+            
+            # Write the bytes chunk to disk so the backend can access a real string path
+            with open(source, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+                
+            st.success(f"File cached: {uploaded_file.name}")
+    else:
+        source = st.text_input(
+            "YouTube URL or Local System File Path",
+            placeholder="https://youtube.com/... or C:/videos/demo.mp4",
+        )
 
     language = st.selectbox(
         "Select Language",
@@ -136,16 +163,15 @@ with st.sidebar:
 # -----------------------------
 if process_button:
     if not source:
-        st.error("Please enter a valid YouTube URL or local file path.")
-
+        st.error("Please enter a valid link, local path, or upload a video file first.")
     else:
         with st.spinner("Processing video using AI pipeline..."):
             try:
+                # Passes a valid local string path or YouTube URL uniformly
                 result = run_pipeline(source, language)
                 st.session_state.pipeline_result = result
                 st.session_state.chat_history = []
                 st.success("Video processed successfully.")
-
             except Exception as e:
                 st.exception(e)
 
@@ -155,7 +181,6 @@ if process_button:
 result = st.session_state.pipeline_result
 
 if result:
-
     transcript = result["transcript"]
     transcript_words = len(transcript.split())
     chunk_estimate = max(1, transcript_words // 250)
@@ -172,7 +197,7 @@ if result:
             f"""
             <div class='metric-card'>
                 <h3>📝 Title</h3>
-                <p>{result['title']}</p>
+                <p>{result.get('title', 'Local Video Asset')}</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -284,10 +309,10 @@ if result:
     # -----------------------------
     st.subheader("💬 Chat With Your Video")
 
+    # Use unique key or form tracking if chat reruns components
     question = st.chat_input("Ask questions about the video...")
 
     if question:
-
         st.session_state.chat_history.append(
             {
                 "role": "user",
@@ -308,8 +333,8 @@ if result:
             }
         )
 
+    # Re-render chat logs outside structural execution logic blocks
     for chat in st.session_state.chat_history:
-
         if chat["role"] == "user":
             st.markdown(
                 f"""
@@ -320,7 +345,6 @@ if result:
                 """,
                 unsafe_allow_html=True,
             )
-
         else:
             st.markdown(
                 f"""
@@ -333,7 +357,7 @@ if result:
             )
 
 else:
-    st.info("Enter a YouTube URL or local file path from the sidebar and click 'Process Video'.")
+    st.info("Upload or provide a video configuration file pathway from the sidebar, then execute 'Process Video'.")
 
 # -----------------------------
 # FOOTER

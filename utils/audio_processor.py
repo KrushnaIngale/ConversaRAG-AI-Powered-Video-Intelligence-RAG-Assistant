@@ -25,7 +25,10 @@ def download_youtube_audio(url :str) ->str:
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info).replace(".webm", ".wav").replace(".m4a", ".wav")
+        # Safely force the string extension to .wav regardless of what the original stream container was
+        raw_filename = ydl.prepare_filename(info)
+        filename = os.path.splitext(raw_filename)[0] + ".wav"
+        
     return filename
 
 # data=download_youtube_audio("https://www.youtube.com/watch?v=AUQJ9eeP-Ls")
@@ -54,9 +57,12 @@ def chunk_audio(wav_path:str, chunk_minutes:int=10)-> list:
     return chunks
 
 def process_input(source: str) -> list:
+    """Unified processor handling remote YouTube URLs and cached local file paths."""
+    # Strip any potential wrapping quotes passed down by terminals or forms
+    source = source.strip("'\"")
     if source.startswith("http://") or source.startswith("https://"):
         print("Detected YouTube URL. Downloading audio...")
-        # wav_path = download_youtube_audio(source)
+        #  wav_path = download_youtube_audio(source)
         try:
             wav_path = download_youtube_audio(source)
         except DownloadError:
@@ -66,6 +72,9 @@ def process_input(source: str) -> list:
             st.stop()
     else:
         print("Detected local file. Converting to WAV...")
+        if not os.path.exists(source):
+            st.error(f"File path does not exist on disk: {source}")
+            st.stop()
         wav_path = convert_to_wav(source)
 
     print("Chunking audio...")
